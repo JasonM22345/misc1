@@ -1,0 +1,45 @@
+from proxmoxer import ProxmoxAPI
+import requests
+
+# Function to download a file from a node
+def download_file_from_node(node, file_path, local_file_name):
+    # Connect to Proxmox API
+    proxmox = ProxmoxAPI('proxmox.example.com', user='root@pam', password='your_password', verify_ssl=False)
+
+    # Get the ticket and CSRF token for authentication
+    ticket = proxmox.get_tokens()['ticket']
+    csrf_token = proxmox.get_tokens()['CSRFPreventionToken']
+
+    # Define the API endpoint for downloading the file
+    url = f"https://proxmox.example.com/api2/json/nodes/{node}/files/content"
+
+    # Set the parameters for the request
+    params = {
+        'path': file_path  # Full path of the file on the Proxmox node
+    }
+
+    # Headers for authentication
+    headers = {
+        'Cookie': f'PVEAuthCookie={ticket}',
+        'CSRFPreventionToken': csrf_token
+    }
+
+    # Make the request to download the file
+    response = requests.get(url, headers=headers, params=params, stream=True)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Save the file to the local filesystem
+        with open(local_file_name, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"File {file_path} downloaded successfully to {local_file_name}")
+    else:
+        print(f"Failed to download the file: {response.status_code} {response.text}")
+
+# Example usage
+node = 'pve'  # Node name
+file_path = '/var/log/syslog'  # Example file path on Proxmox node
+local_file_name = 'syslog.txt'  # Local filename to save as
+
+download_file_from_node(node, file_path, local_file_name)
