@@ -1,5 +1,5 @@
-Here’s a Python script that implements the functionality you described. The script utilizes SSH to execute commands on a remote host and works with disk images for virtual USB drives. It also includes a simple command-line interface (CLI) using argparse.
-
+pyhton script for usb stuff
+```
 import os
 import subprocess
 import paramiko
@@ -140,6 +140,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+```
 
 How it works:
 
