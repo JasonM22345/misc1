@@ -122,24 +122,13 @@ for y in range(maze_size):
 path_weight = Sum([If(cells[x][y], weights[x][y], 0) for x in range(maze_size) for y in range(maze_size)])
 solver.add(path_weight >= 0)  # Ensure the path weight is non-negative
 
-# Solve the maze
+# Solve the maze and extract the solution path in one step
 solution_path = []
 if solver.check() == sat:
     model = solver.model()
-    x, y = entrance
-    while (x, y) != exit:
-        solution_path.append((x, y))
+    solution_path = [(x, y) for x in range(maze_size) for y in range(maze_size) if model.evaluate(cells[x][y])]
+    for x, y in solution_path:
         maze[y][x] = 2
-        if x > 0 and model.evaluate(cells[x - 1][y]):
-            x, y = x - 1, y
-        elif x < maze_size - 1 and model.evaluate(cells[x + 1][y]):
-            x, y = x + 1, y
-        elif y > 0 and model.evaluate(cells[x][y - 1]):
-            x, y = x, y - 1
-        elif y < maze_size - 1 and model.evaluate(cells[x][y + 1]):
-            x, y = x, y + 1
-    solution_path.append(exit)
-    maze[exit[1]][exit[0]] = 2
     print("Solution Path:", solution_path)
     print("Path Weight:", sum(weights[p[0]][p[1]] for p in solution_path))
 else:
