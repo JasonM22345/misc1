@@ -122,19 +122,27 @@ for y in range(maze_size):
 path_weight = Sum([If(cells[x][y], weights[x][y], 0) for x in range(maze_size) for y in range(maze_size)])
 solver.add(path_weight >= 0)  # Ensure the path weight is non-negative
 
-# Solve the maze and extract the solution path in one step
-solution_path = []
+# Solve the maze and extract multiple solution paths
+solution_paths = []
 if solver.check() == sat:
-    model = solver.model()
-    solution_path = [(x, y) for x in range(maze_size) for y in range(maze_size) if model.evaluate(cells[x][y])]
-    for x, y in solution_path:
-        maze[y][x] = 2
-    print("Solution Path:", solution_path)
-    print("Path Weight:", sum(weights[p[0]][p[1]] for p in solution_path))
+    while len(solution_paths) < 2:
+        model = solver.model()
+        solution_path = [(x, y) for x in range(maze_size) for y in range(maze_size) if model.evaluate(cells[x][y])]
+        solution_paths.append(solution_path)
+
+        # Exclude the current solution from further searches
+        solver.add(Or([Not(cells[x][y]) for x, y in solution_path]))
+
+    for i, path in enumerate(solution_paths):
+        print(f"Solution Path {i + 1}: {path}")
+        print(f"Path Weight {i + 1}: {sum(weights[p[0]][p[1]] for p in path)}")
 else:
     print("No solution found")
 
-# Run the maze visualization
-app = QApplication(sys.argv)
-window = MazeWindow(maze, solution_path)
-sys.exit(app.exec_())
+# Run the maze visualization for the first solution
+if solution_paths:
+    for x, y in solution_paths[0]:
+        maze[y][x] = 2
+    app = QApplication(sys.argv)
+    window = MazeWindow(maze, solution_paths[0])
+    sys.exit(app.exec_())
