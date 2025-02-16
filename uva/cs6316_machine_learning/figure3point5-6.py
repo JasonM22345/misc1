@@ -49,6 +49,8 @@ def plot_figure_3_5():
         for pred in predictions[:20]:
             plt.plot(x, pred, color="red", alpha=0.3)
         plt.ylim(-1.5, 1.5)
+        plt.xlabel("x")
+        plt.ylabel("t")
 
         plt.subplot(3, 2, 2 * i + 2)
         plt.title(f"Average fit for ln(λ) = {ln_λ}")
@@ -56,6 +58,8 @@ def plot_figure_3_5():
         plt.plot(x, mean_prediction, label="Mean fit", color="red")
         plt.legend()
         plt.ylim(-1.5, 1.5)
+        plt.xlabel("x")
+        plt.ylabel("t")
 
     plt.tight_layout()
     plt.show()
