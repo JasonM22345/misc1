@@ -21,12 +21,12 @@ def plot_figure_3_5():
         datasets.append((x_data, y_data))
 
     # Regularization parameter values
-    ln_lambda_values = [2.6, -0.31, -2.4]
+    ln_λ_values = [2.6, -0.31, -2.4]
 
     plt.figure(figsize=(12, 8))
 
-    for i, ln_lambda in enumerate(ln_lambda_values):
-        lambda_value = np.exp(ln_lambda)
+    for i, ln_λ in enumerate(ln_λ_values):
+        λ_value = np.exp(ln_λ)
         predictions = []
         
         for x_data, y_data in datasets:
@@ -35,7 +35,7 @@ def plot_figure_3_5():
             phi_data = np.exp(-0.5 * ((x_data[:, None] - x_data[None, :]) / (1 / num_basis)) ** 2)
             
             # Compute weights with regularization
-            w = np.linalg.inv(phi_data.T @ phi_data + lambda_value * np.eye(num_points)) @ phi_data.T @ y_data
+            w = np.linalg.inv(phi_data.T @ phi_data + λ_value * np.eye(num_points)) @ phi_data.T @ y_data
             y_pred = phi @ w
             predictions.append(y_pred)
 
@@ -45,14 +45,13 @@ def plot_figure_3_5():
 
         # Plotting
         plt.subplot(3, 2, 2 * i + 1)
-        plt.title(f"Fits for ln(lambda) = {ln_lambda}")
-        plt.plot(x, true_function, label="True function", color="green")
+        plt.title(f"Fits for ln(λ) = {ln_λ}")
         for pred in predictions[:20]:
             plt.plot(x, pred, color="red", alpha=0.3)
         plt.ylim(-1.5, 1.5)
 
         plt.subplot(3, 2, 2 * i + 2)
-        plt.title(f"Average fit for ln(lambda) = {ln_lambda}")
+        plt.title(f"Average fit for ln(λ) = {ln_λ}")
         plt.plot(x, true_function, label="True function", color="green")
         plt.plot(x, mean_prediction, label="Mean fit", color="red")
         plt.legend()
@@ -81,13 +80,13 @@ def plot_figure_3_6():
         datasets.append((x_data, y_data))
 
     # Regularization parameter values
-    ln_lambda_values = np.linspace(-3, 2, 50)
+    ln_λ_values = np.linspace(-3, 2, 50)
     squared_bias = []
     variance = []
     test_error = []
 
-    for ln_lambda in ln_lambda_values:
-        lambda_value = np.exp(ln_lambda)
+    for ln_λ in ln_λ_values:
+        λ_value = np.exp(ln_λ)
         predictions = []
 
         for x_data, y_data in datasets:
@@ -96,7 +95,7 @@ def plot_figure_3_6():
             phi_data = np.exp(-0.5 * ((x_data[:, None] - x_data[None, :]) / (1 / num_basis)) ** 2)
             
             # Compute weights with regularization
-            w = np.linalg.inv(phi_data.T @ phi_data + lambda_value * np.eye(num_points)) @ phi_data.T @ y_data
+            w = np.linalg.inv(phi_data.T @ phi_data + λ_value * np.eye(num_points)) @ phi_data.T @ y_data
             y_pred = phi @ w
             predictions.append(y_pred)
 
@@ -111,11 +110,11 @@ def plot_figure_3_6():
 
     # Plot
     plt.figure(figsize=(8, 6))
-    plt.plot(ln_lambda_values, squared_bias, label="(Bias)^2")
-    plt.plot(ln_lambda_values, variance, label="Variance")
-    plt.plot(ln_lambda_values, np.array(squared_bias) + np.array(variance), label="(Bias)^2 + Variance")
-    plt.plot(ln_lambda_values, test_error, label="Test Error", linestyle="--")
-    plt.xlabel("ln(lambda)")
+    plt.plot(ln_λ_values, squared_bias, label="(Bias)²", color="blue")
+    plt.plot(ln_λ_values, variance, label="Variance", color="orange")
+    plt.plot(ln_λ_values, np.array(squared_bias) + np.array(variance), label="(Bias)² + Variance", color="pink")
+    plt.plot(ln_λ_values, test_error, label="Test Error", linestyle="--", color="green")
+    plt.xlabel("ln(λ)")
     plt.ylabel("Error")
     plt.legend()
     plt.title("Bias-Variance Trade-off")
