@@ -9,7 +9,7 @@ Memcheck does not merely detect errors. For profiling purposes, it records and c
 Memcheck enables **execution-tree-based memory usage tracking** using:
 
 ```bash
-valgrind --tool=memcheck --xtree-memory=full ./your_executable
+valgrind --tool=memcheck --xtree-memory=full ./SUT
 ```
 
 This generates a detailed memory usage tree (`xtmemory.kcg.PID`) that can be visualized in tools like `kcachegrind`.
@@ -60,30 +60,53 @@ flowchart TD
 
 ### 1. Full Memory Usage Summary:
 ```bash
-valgrind --tool=memcheck --xtree-memory=full ./your_executable
+valgrind --tool=memcheck --xtree-memory=full ./SUT
 ```
 Outputs memory usage data to `xtmemory.kcg.PID`, viewable with `kcachegrind`.
 
 ### 2. Heap Profiling (Leaked, Live, Reachable):
 ```bash
-valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./your_executable
+valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./SUT
 ```
 
 ### 3. Track Memory Origin (for profiling dynamic vs static vs stack):
 ```bash
-valgrind --tool=memcheck --track-origins=yes ./your_executable
+valgrind --tool=memcheck --track-origins=yes ./SUT
 ```
 
 ### 4. Count Allocation Frequency:
 Use execution trees to inspect frequent allocators:
 ```bash
-valgrind --tool=memcheck --xtree-memory=full ./your_executable
+valgrind --tool=memcheck --xtree-memory=full ./SUT
 kcachegrind xtmemory.kcg.PID
 ```
 
 ---
 
-## Summary: Profiling Logic
+## Memory Profiling Breakdown
+
+### How much memory an executable uses:
+Valgrind tracks memory usage by intercepting all memory-related functions such as `malloc`, `calloc`, `realloc`, `mmap`, and their deallocation counterparts. It records the size and location of each allocation and maintains a running total of all active memory. When the program ends or at defined checkpoints, Valgrind summarizes the total allocated, still-live, and peak memory usage. These metrics help you understand the footprint of your program in terms of total memory consumption.
+```bash
+valgrind --tool=memcheck --xtree-memory=full ./SUT
+```
+
+### What type of memory is used:
+Valgrind distinguishes memory types by analyzing the origin of each allocation. Heap memory is logged through dynamic allocators, stack usage is inferred from stack pointer changes, static and global memory is captured during program startup, and memory-mapped regions are monitored through system calls. This classification is maintained in Valgrind’s internal metadata to provide a type-based breakdown.
+```bash
+valgrind --tool=memcheck --track-origins=yes ./SUT
+```
+
+### How frequently each type is allocated:
+Allocation frequency is measured by maintaining per-type counters, logging each allocation and deallocation as it occurs. This data is then aggregated and tied to the call stack to highlight which memory types and code paths are allocating most frequently. Visualization through execution trees helps reveal allocation hotspots.
+```bash
+valgrind --tool=memcheck --xtree-memory=full ./SUT
+kcachegrind xtmemory.kcg.PID
+```
+
+---
+
+## Summary: 
 
 - Every allocated block is tagged with its **type** (heap, stack, etc).
 - Sizes, locations, and lifetimes are recorded.
