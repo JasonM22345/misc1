@@ -41,14 +41,14 @@ Heap allocations are intercepted by Memcheck’s malloc wrappers. The key idea i
 
 ```mermaid
 flowchart TD
-    A[Client calls malloc/new]
-    B[MC_(malloc) wrapper invoked]
-    C[Call MC_(new_block)]
-    D[VG_(cli_malloc) allocates memory]
-    E[Memory block returned]
-    F[Call MC_(make_mem_undefined_w_otag)]
-    G[Record allocation in MC_(malloc_list)]
-    H[Return pointer to client]
+    A["Client calls malloc/new"]
+    B["MC_(malloc) wrapper invoked"]
+    C["Call MC_(new_block)"]
+    D["VG_(cli_malloc) allocates memory"]
+    E["Memory block returned"]
+    F["Call MC_(make_mem_undefined_w_otag)"]
+    G["Record allocation in MC_(malloc_list)"]
+    H["Return pointer to client"]
     
     A --> B
     B --> C
@@ -57,6 +57,7 @@ flowchart TD
     E --> F
     F --> G
     G --> H
+
 ```
 
 **Function Details:**
@@ -96,13 +97,13 @@ Stack memory profiling in Memcheck differs from heap profiling because the stack
 
 ```mermaid
 flowchart TD
-    A[Function Entry]
-    B[Reserve stack frame for locals]
-    C[Instrument stack frame]
-    D[Mark local region as undefined (MC_(make_mem_undefined_w_otag))]
-    E[Mark redzone as noaccess (MC_(make_mem_noaccess))]
-    F[Execute function body]
-    G[Function Exit: Restore redzones]
+    A["Function Entry"]
+    B["Reserve stack frame for locals"]
+    C["Instrument stack frame"]
+    D["Mark local region as undefined (MC_(make_mem_undefined_w_otag))"]
+    E["Mark redzone as noaccess (MC_(make_mem_noaccess))"]
+    F["Execute function body"]
+    G["Function Exit: Restore redzones"]
     
     A --> B
     B --> C
@@ -110,6 +111,7 @@ flowchart TD
     D --> E
     E --> F
     F --> G
+
 ```
 
 **Function Details:**
@@ -141,16 +143,17 @@ Static (or global) memory regions are set up when the program starts. Memcheck i
 
 ```mermaid
 flowchart TD
-    A[Program Startup]
-    B[Identify static data segments (data and BSS)]
-    C[For each segment, determine initial state]
-    D[Call set_address_range_perms]
-    E[Shadow memory initialized for static areas]
+    A["Program Startup"]
+    B["Identify static data segments (data and BSS)"]
+    C["For each segment, determine initial state"]
+    D["Call set_address_range_perms"]
+    E["Shadow memory initialized for static areas"]
     
     A --> B
     B --> C
     C --> D
     D --> E
+
 ```
 
 **Function Details:**
@@ -183,18 +186,19 @@ Memory mappings (from the system call mmap) are handled separately since they ca
 
 ```mermaid
 flowchart TD
-    A[mmap system call intercepted]
-    B[Mapping created in guest address space]
-    C[Determine mapping type (file-backed or anonymous)]
-    D[Call MC_(make_mem_defined) or MC_(make_mem_undefined)]
-    E[Call set_address_range_perms to update shadow memory]
-    F[Region is now profiled by Memcheck]
+    A["mmap system call intercepted"]
+    B["Mapping created in guest address space"]
+    C["Determine mapping type (file-backed or anonymous)"]
+    D["Call MC_(make_mem_defined) or MC_(make_mem_undefined)"]
+    E["Call set_address_range_perms to update shadow memory"]
+    F["Region is now profiled by Memcheck"]
     
     A --> B
     B --> C
     C --> D
     D --> E
     E --> F
+
 ```
 
 **Function Details:**
