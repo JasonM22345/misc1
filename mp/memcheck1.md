@@ -23,7 +23,7 @@ Heap allocations are intercepted by Memcheck’s malloc wrappers. The key idea i
     1. Validate the allocation size (and, if needed, record a “fishy value” error if the size is suspicious).  
     2. Call `MC_(new_block)` which internally invokes `VG_(cli_malloc)` to allocate the real memory.
     3. Once the memory is allocated, if the block is not zeroed, call `MC_(make_mem_undefined_w_otag)` to mark the new block as undefined (along with an “origin tag” computed from the allocation’s context).  
-    4. Record the allocated block in a hash table (typically `MC_(malloc_list)`) for later lookup.
+    4. Record the allocated block in a hash table (`MC_(malloc_list)`) for later lookup.
 
 - **Heap Free and Reallocation:**  
   When a free is performed (via `MC_(free)` or the C++ delete wrappers), Memcheck calls `MC_(handle_free)`:
@@ -221,5 +221,58 @@ Memcheck profiles memory usage by maintaining a parallel “shadow” copy of th
 - **mmap:** System call interception ensures that memory mappings are “painted” in shadow memory with the correct status, using similar functions as for static data.
 
 Each of these steps relies on functions such as `set_address_range_perms`, `MC_(make_mem_undefined_w_otag)`, `MC_(make_mem_defined)`, and their variants. These functions compute the proper secondary map (or DSM) entries corresponding to each byte of the application’s memory and update the shadow bits (the “V+A bits”) accordingly. This design allows Memcheck to later detect errors like using uninitialised values, invalid reads/writes, and dangling pointers, all while providing detailed origin information to the user.
+
+
+
+# Appendix
+
+
+## Shadow Memory Counters Update Flow
+
+
+This diagram illustrates how Memcheck updates its global shadow memory usage counters during a memory event (e.g. malloc/free). When shadow memory is updated via set_address_range_perms, the function update_SM_counts(oldSM, newSM) is invoked to adjust several counters that track the memory state, where:
+- DSM_NOACCESS/DSM_UNDEFINED/DSM_DEFINED are the distinguished secondary maps representing noaccess, undefined, or defined memory regions;
+- n_noaccess_SMs, n_undefined_SMs, n_defined_SMs count how many 64 KB chunks are in each state;
+- n_non_DSM_SMs counts secondary maps that are not one of the three distinguished ones; and
+- n_deissued_SMs/n_issued_SMs track changes for non-distinguished maps—this mechanism ultimately builds a current profile of memory usage.
+
+```mermaid
+flowchart TD
+    A["Memory event (malloc/free, etc.)"]
+    B["Call Memcheck wrapper (e.g. MC_(malloc)/MC_(free))"]
+    C["Update shadow memory via set_address_range_perms"]
+    D["Invoke update_SM_counts(oldSM, newSM)"]
+    
+    D --> E["Check oldSM type"]
+    
+    E --> F1["Is oldSM = DSM_NOACCESS?"]
+    F1 -- Yes --> G1["Decrement n_noaccess_SMs"]
+    F1 -- No --> F2["Is oldSM = DSM_UNDEFINED?"]
+    F2 -- Yes --> G2["Decrement n_undefined_SMs"]
+    F2 -- No --> F3["Is oldSM = DSM_DEFINED?"]
+    F3 -- Yes --> G3["Decrement n_defined_SMs"]
+    F3 -- No --> G4["Decrement n_non_DSM_SMs and Increment n_deissued_SMs"]
+    
+    G1 & G2 & G3 & G4 --> H["Check newSM type"]
+    
+    H --> I1["Is newSM = DSM_NOACCESS?"]
+    I1 -- Yes --> J1["Increment n_noaccess_SMs"]
+    I1 -- No --> I2["Is newSM = DSM_UNDEFINED?"]
+    I2 -- Yes --> J2["Increment n_undefined_SMs"]
+    I2 -- No --> I3["Is newSM = DSM_DEFINED?"]
+    I3 -- Yes --> J3["Increment n_defined_SMs"]
+    I3 -- No --> J4["Increment n_non_DSM_SMs and n_issued_SMs"]
+    
+    J1 & J2 & J3 & J4 --> K["Update maximum counters if current > max"]
+    K --> L["Global memory usage profile updated"]
+    
+    A --> B
+    B --> C
+    C --> D
+    L --> M["Memory usage counters reflect current shadow state"]
+
+```
+
+
 
 
