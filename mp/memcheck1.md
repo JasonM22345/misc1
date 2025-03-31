@@ -273,6 +273,7 @@ flowchart TD
 
 ```
 
+In this process, each memory event triggers the wrapper to update the shadow memory; then, update_SM_counts() first decrements the counter for the old secondary map (based on its type) and then increments the counter for the new secondary map, finally updating maximum counters as needed to maintain an accurate profile of the memory usage.
 
 
 
